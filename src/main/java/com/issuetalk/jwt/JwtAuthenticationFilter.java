@@ -30,27 +30,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = resolveToken(request);
+        String token = resolveToken(request); // 요청 헤더에서 토큰 추출
 
-        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
-            String username = jwtProvider.getUsernameFromToken(token);
-
-            // 인증 객체 생성
+        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) { // 토큰 존재 및 유효성 검사
+            String username = jwtProvider.getUsernameFromToken(token); // 토큰에서 사용자 이름 추출
+            // 인증 객체 생성 (권한은 비워둠)
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, null, null);
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            // SecurityContextHolder에 저장
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // 요청 정보 설정
+
+            SecurityContextHolder.getContext().setAuthentication(authentication); // 인증 정보 저장
         }
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(request, response); // 다음 필터로 요청 전달
     }
 
     private String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String bearer = request.getHeader(HttpHeaders.AUTHORIZATION); // Authorization 헤더 가져오기
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7); // Bearer 제거
+            return bearer.substring(7); // "Bearer " 제거하고 토큰만 추출
         }
         return null;
     }

@@ -1,4 +1,4 @@
-package com.issuetalk.chat.WebSocket;
+package com.issuetalk.chat.websocket;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.*;
@@ -16,6 +16,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(handler, "/ws/chat")
-                .setAllowedOrigins("*"); // 이후 프론트 도메인으로 변경 가능
+                .setAllowedOrigins("*"); // CORS와 별도로 WebSocket 자체에도 허용 설정 필요
     }
 }

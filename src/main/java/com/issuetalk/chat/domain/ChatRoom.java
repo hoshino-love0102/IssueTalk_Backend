@@ -1,4 +1,4 @@
-package com.issuetalk.chat;
+package com.issuetalk.chat.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatRoom {
-    private String roomId;
-    private List<String> teamAUserIds;
-    private List<String> teamBUserIds;
+
+    private String roomId; // 방 ID
+    private List<String> teamAUserIds; // A팀 사용자 목록
+    private List<String> teamBUserIds; // B팀 사용자 목록
 }

@@ -30,14 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // /auth 경로는 JWT 필터 무시
+        // /auth 경로는 필터 패스
         String path = request.getRequestURI();
         if (path.startsWith("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // JWT 토큰 추출 및 유효성 검사
+        // JWT 토큰 추출 및 인증 처리
         String token = resolveToken(request);
         if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
             String username = jwtProvider.getUsernameFromToken(token);
@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+
         filterChain.doFilter(request, response);
     }
 

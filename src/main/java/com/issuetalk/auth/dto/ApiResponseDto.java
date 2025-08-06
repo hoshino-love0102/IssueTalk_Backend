@@ -8,4 +8,5 @@ import lombok.Getter;
 public class ApiResponseDto {
     private boolean success; // 요청 성공 여부
     private String message;  // 응답 메시지
+    private String token;    // JWT 토큰 (로그인 시 사용)
 }

@@ -23,6 +23,11 @@ public class ChatSessionManager {
         topicRoomMap.put(topicId, room);
     }
 
+    // 모든 채팅방 조회 (topicId → ChatRoom)
+    public Map<String, ChatRoom> getAllRooms() {
+        return topicRoomMap;
+    }
+
     // 세션 등록 (팀 단위)
     public void register(String teamId, WebSocketSession session) {
         teamSessions.computeIfAbsent(teamId, k -> ConcurrentHashMap.newKeySet()).add(session);
@@ -40,4 +45,15 @@ public class ChatSessionManager {
     public Set<WebSocketSession> getTeamSessions(String teamId) {
         return teamSessions.getOrDefault(teamId, Collections.emptySet());
     }
+
+    // roomId 기준으로 ChatRoom 조회
+    public ChatRoom getRoomByRoomId(String roomId) {
+        for (ChatRoom room : topicRoomMap.values()) {
+            if (room.getRoomId().equals(roomId)) {
+                return room;
+            }
+        }
+        return null;
+    }
+
 }

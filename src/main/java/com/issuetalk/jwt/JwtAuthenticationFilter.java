@@ -30,9 +30,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // /auth 경로는 필터 패스
         String path = request.getRequestURI();
-        if (path.startsWith("/auth")) {
+
+        // OPTIONS 요청과 /auth 경로는 필터 패스
+        if (request.getMethod().equalsIgnoreCase("OPTIONS") || path.startsWith("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }

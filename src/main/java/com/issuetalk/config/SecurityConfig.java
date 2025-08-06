@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // CSRF 비활성화
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 허용
-                        .requestMatchers("/auth/**", "/", "/websocket.html", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/auth/**", "/chat/rooms", "/api/topic/list", "/").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

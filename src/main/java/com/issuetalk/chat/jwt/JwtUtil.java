@@ -2,28 +2,57 @@ package com.issuetalk.chat.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@Component // 스프링 빈으로 등록
+import javax.crypto.SecretKey;
+
+@Component
 public class JwtUtil {
 
-    private final String secretKey = "your-secret-key"; // JWT 서명에 사용할 비밀 키
+    @Value("${jwt.secret}") // application.properties에서 주입
+    private String secret;
 
-    // 토큰에서 사용자 ID 추출
-    public String extractUserId(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(secretKey.getBytes()) // 서명 키 설정
-                .parseClaimsJws(token) // 토큰 파싱
-                .getBody(); // 페이로드 반환
-        return claims.getSubject(); // subject (보통 userId) 추출
+    private SecretKey secretKey;
+
+    @PostConstruct
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // 토큰에서 닉네임 추출
+    // 토큰에서 userId(subject) 추출
+    public String extractUserId(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    // 토큰에서 nickname 추출
     public String extractNickname(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(secretKey.getBytes()) // 서명 키 설정
-                .parseClaimsJws(token) // 토큰 파싱
-                .getBody(); // 페이로드 반환
-        return claims.get("nickname", String.class); // nickname 클레임 추출
+        return parseClaims(token).get("nickname", String.class);
+    }
+
+    // "Bearer " 포함된 토큰에서 userId 추출
+    public String extractUserIdFromBearer(String bearerToken) {
+        return extractUserId(stripBearer(bearerToken));
+    }
+
+    // "Bearer " 포함된 토큰에서 nickname 추출
+    public String extractNicknameFromBearer(String bearerToken) {
+        return extractNickname(stripBearer(bearerToken));
+    }
+
+    // 내부적으로 Claims 파싱 처리
+    private Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    // "Bearer " 제거
+    public String stripBearer(String token) {
+        return (token != null && token.startsWith("Bearer ")) ? token.substring(7) : token;
     }
 }

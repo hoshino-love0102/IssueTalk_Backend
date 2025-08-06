@@ -4,7 +4,7 @@ server:
 spring:
   data:
     mongodb:
-      uri: ${MONGO_URI}
+      uri: mongodb+srv://issuetalk:12345678@cluster0.ht1f3xk.mongodb.net/issuetalk?retryWrites=true&w=majority&appName=Cluster0
 
 logging:
   level:

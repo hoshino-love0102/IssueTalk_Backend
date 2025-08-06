@@ -3,22 +3,25 @@ package com.issuetalk.chat.websocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.issuetalk.chat.domain.ChatMessage;
 import com.issuetalk.chat.dto.ChatPayload;
-import com.issuetalk.chat.repository.ChatMessageRepository;
 import com.issuetalk.chat.jwt.JwtUtil;
+import com.issuetalk.chat.repository.ChatMessageRepository;
 import com.issuetalk.chat.service.ChatSessionManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
-@Component // WebSocket 핸들러로 등록
-@RequiredArgsConstructor // 생성자 주입 자동 생성
+@Component
+@RequiredArgsConstructor
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final ChatMessageRepository messageRepository; // 메시지 저장소
@@ -27,8 +30,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파서
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        // 연결되면 세션을 팀에 등록
+    public void afterConnectionEstablished(@NonNull WebSocketSession session) {
         String teamId = getTeamId(session);
         if (teamId != null) {
             sessionManager.register(teamId, session);
@@ -36,39 +38,34 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
-        // 메시지 수신 시 처리
+    public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
         ChatPayload payload = objectMapper.readValue(message.getPayload(), ChatPayload.class);
 
-        String token = extractToken(session); // JWT 추출
-        String username = jwtUtil.extractUserId(token); // userId 추출
-        String nickname = jwtUtil.extractNickname(token); // nickname 추출
+        String token = extractToken(session);
+        String userId = jwtUtil.extractUserId(token);
+        String nickname = jwtUtil.extractNickname(token);
 
-        // 메시지 객체 생성
         ChatMessage chatMessage = ChatMessage.builder()
                 .roomId(payload.getRoomId())
-                .sender(username)
+                .sender(userId)
                 .nickname(nickname)
                 .message(payload.getMessage())
                 .submitted(payload.isSubmitted())
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        String teamId = getTeamId(session); // 현재 팀 ID 추출
+        String teamId = getTeamId(session);
 
         if (payload.isSubmitted()) {
-            // 제출된 메시지는 DB에 저장 후 상대 팀에게 전송
             messageRepository.save(chatMessage);
             String opponentTeam = getOpponentTeamId(teamId);
             sendToTeam(opponentTeam, chatMessage);
         } else {
-            // 작성 중 메시지는 같은 팀에게만 전송
             sendToTeam(teamId, chatMessage);
         }
     }
 
     private void sendToTeam(String teamId, ChatMessage msg) throws IOException {
-        // 특정 팀의 세션에 메시지 전송
         Set<WebSocketSession> sessions = sessionManager.getTeamSessions(teamId);
         String json = objectMapper.writeValueAsString(msg);
 
@@ -79,30 +76,28 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private String getTeamId(WebSocketSession session) {
-        // WebSocket 연결 URL에서 teamId 쿼리 추출
-        String query = session.getUri().getQuery();
-        return UriComponentsBuilder.fromUriString("?" + query)
+    private String getTeamId(@NonNull WebSocketSession session) {
+        URI uri = session.getUri();
+        if (uri == null || uri.getQuery() == null) return null;
+
+        return UriComponentsBuilder.fromUriString("?" + uri.getQuery())
                 .build()
                 .getQueryParams()
-                .getFirst("teamId"); // 클라이언트에서 반드시 teamId도 같이 보내야 함
+                .getFirst("teamId");
     }
 
-    private String extractToken(WebSocketSession session) {
-        // WebSocket 헤더에서 JWT 추출
+    private String extractToken(@NonNull WebSocketSession session) {
         String bearer = session.getHandshakeHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         return bearer != null ? bearer.replace("Bearer ", "") : "";
     }
 
     private String getOpponentTeamId(String teamId) {
-        // 상대 팀 ID 반환 (예: A <-> B)
         if (teamId == null) return "";
         return teamId.endsWith("A") ? teamId.replace("A", "B") : teamId.replace("B", "A");
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        // 연결 종료 시 세션 해제
+    public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) {
         String teamId = getTeamId(session);
         if (teamId != null) {
             sessionManager.unregister(teamId, session);

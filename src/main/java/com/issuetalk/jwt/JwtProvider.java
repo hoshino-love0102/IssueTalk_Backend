@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
-@Component // Spring Bean으로 등록
+@Component
 public class JwtProvider {
 
     private final SecretKey key; // 서명에 사용할 비밀 키
@@ -26,21 +26,21 @@ public class JwtProvider {
     }
 
     // 토큰 생성 (username과 nickname 포함)
-    public String generateToken(String username) {
+    public String generateToken(String userId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMillis);
 
-        String nickname = userRepository.findByUsername(username)
+        String nickname = userRepository.findByUserId(userId)
                 .map(User::getNickname)
                 .orElse("익명");
 
         return Jwts.builder()
-                .setSubject(username) // 사용자 이름을 subject에 저장
-                .claim("nickname", nickname) // 닉네임을 클레임에 추가
-                .setIssuedAt(now) // 발급 시각
-                .setExpiration(expiry) // 만료 시각
-                .signWith(key, SignatureAlgorithm.HS256) // 서명 알고리즘 및 키 설정
-                .compact(); // 토큰 문자열 생성
+                .setSubject(userId)
+                .claim("nickname", nickname)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
     // 토큰에서 username 추출

@@ -30,12 +30,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
+        // OPTIONS 요청 및 /auth 경로는 필터 제외
         if (request.getMethod().equalsIgnoreCase("OPTIONS") || path.startsWith("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // JWT 토큰 추출 및 인증 처리
         String token = resolveToken(request);
         if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
             String username = jwtProvider.getUsernameFromToken(token);

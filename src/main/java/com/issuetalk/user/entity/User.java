@@ -1,29 +1,27 @@
 package com.issuetalk.user.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
-
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "users")
 public class User {
 
     @Id
     private String id;
 
-    private String username;
+    private String userId;
     private String password;
     private String nickname;
-    private LocalDate birthDate;
 
-    @Builder
-    public User(String username, String password, String nickname, LocalDate birthDate) {
-        this.username = username;
+    public User(String userId, String password, String nickname) {
+        this.userId = userId;
         this.password = password;
         this.nickname = nickname;
-        this.birthDate = birthDate;
     }
 }

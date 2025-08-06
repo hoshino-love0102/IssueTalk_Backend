@@ -1,33 +1,67 @@
 package com.issuetalk.chat.controller;
 
 import com.issuetalk.chat.domain.ChatMessage;
+import com.issuetalk.chat.dto.ChatRoomDto;
 import com.issuetalk.chat.service.ChatService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
 
-    private final ChatService chatService; // 채팅 서비스 의존성 주입
+    private final ChatService chatService;
 
     public ChatController(ChatService chatService) {
         this.chatService = chatService;
     }
 
-    @PostMapping("/room") // 채팅방 생성 요청 처리
+    @PostMapping("/room")
     public ResponseEntity<String> createRoom(@RequestParam String topicId,
-                                             @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
-        String roomId = chatService.createRoom(topicId, token); // 채팅방 생성
-        return ResponseEntity.ok(roomId); // 생성된 roomId 반환
+                                             @RequestParam(defaultValue = "3") int maxTeamSize) {
+        String roomId = chatService.createRoom(topicId, maxTeamSize);
+        return ResponseEntity.ok(roomId);
     }
 
-    @GetMapping("/room/{roomId}") // 채팅 메시지 조회 요청 처리
+    @GetMapping("/room/{roomId}")
     public ResponseEntity<List<ChatMessage>> getMessages(@PathVariable String roomId) {
-        List<ChatMessage> messages = chatService.getMessagesByRoom(roomId); // 메시지 목록 조회
-        return ResponseEntity.ok(messages); // 메시지 리스트 반환
+        return ResponseEntity.ok(chatService.getMessagesByRoom(roomId));
+    }
+
+    @PostMapping("/room/{roomId}/join")
+    public ResponseEntity<?> joinTeam(@PathVariable String roomId,
+                                      @RequestParam String team,
+                                      @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        try {
+            String joinedTeam = chatService.joinTeam(roomId, token, team);
+            return ResponseEntity.ok(Map.of("success", true, "team", joinedTeam));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/rooms")
+    public ResponseEntity<List<ChatRoomDto>> getUserRooms(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return ResponseEntity.ok(chatService.getRoomsByUser(token));
+    }
+
+    // 전체 채팅방 목록 조회
+    @GetMapping("/room/all")
+    public ResponseEntity<List<ChatRoomDto>> getAllRooms() {
+        return ResponseEntity.ok(chatService.getAllRooms());
+    }
+
+    // 특정 roomId의 topic 조회
+    @GetMapping("/room/{roomId}/topic")
+    public ResponseEntity<?> getTopicByRoomId(@PathVariable String roomId) {
+        String topic = chatService.getTopicByRoomId(roomId);
+        if (topic == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "해당 roomId의 채팅방이 존재하지 않습니다."));
+        }
+        return ResponseEntity.ok(Map.of("roomId", roomId, "topicId", topic));
     }
 }

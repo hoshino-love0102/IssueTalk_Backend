@@ -28,11 +28,12 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Security 필터 체인 설정
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {}) // CORS 허용
+                .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/", "/websocket.html", "/css/**", "/js/**", "/images/**").permitAll()
@@ -43,16 +44,17 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // CORS 전체 허용 설정
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000/", "https://issuetalk-backend.onrender.com/")
+                        .allowedOriginPatterns("*")
                         .allowedMethods("*")
                         .allowedHeaders("*")
-                        .allowCredentials(false);
+                        .allowCredentials(true);
             }
         };
     }

@@ -30,26 +30,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = resolveToken(request); // 요청 헤더에서 토큰 추출
-
-        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) { // 토큰 존재 및 유효성 검사
-            String username = jwtProvider.getUsernameFromToken(token); // 토큰에서 사용자 이름 추출
-            // 인증 객체 생성 (권한은 비워둠)
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, null);
-
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // 요청 정보 설정
-
-            SecurityContextHolder.getContext().setAuthentication(authentication); // 인증 정보 저장
+        // /auth 경로는 JWT 필터 무시
+        String path = request.getRequestURI();
+        if (path.startsWith("/auth")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        filterChain.doFilter(request, response); // 다음 필터로 요청 전달
+        // JWT 토큰 추출 및 유효성 검사
+        String token = resolveToken(request);
+        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
+            String username = jwtProvider.getUsernameFromToken(token);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, null);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+        filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader(HttpHeaders.AUTHORIZATION); // Authorization 헤더 가져오기
+        String bearer = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7); // "Bearer " 제거하고 토큰만 추출
+            return bearer.substring(7);
         }
         return null;
     }

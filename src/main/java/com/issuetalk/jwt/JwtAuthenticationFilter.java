@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,12 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // OPTIONS 요청 및 /auth 경로는 필터 제외
+        // 인증 없이 접근 가능한 경로는 필터 타지 않도록 바로 통과시킴
         if (request.getMethod().equalsIgnoreCase("OPTIONS") || path.startsWith("/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        // 토큰 인증 로직
         String token = resolveToken(request);
         if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
             String username = jwtProvider.getUsernameFromToken(token);

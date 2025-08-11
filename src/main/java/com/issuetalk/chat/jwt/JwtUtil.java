@@ -12,7 +12,7 @@ import javax.crypto.SecretKey;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}") // application.properties에서 주입
+    @Value("${jwt.secret}") // application.yml에서 주입
     private String secret;
 
     private SecretKey secretKey;

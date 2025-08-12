@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,36 +17,49 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private static final AntPathMatcher M = new AntPathMatcher();
 
     public JwtAuthenticationFilter(JwtProvider jwtProvider) {
         this.jwtProvider = jwtProvider;
     }
 
+    // 공개 경로는 필터 건너뜀
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String p = request.getRequestURI();
+        return request.getMethod().equalsIgnoreCase("OPTIONS")
+                || M.match("/auth/**", p)
+                || M.match("/chat/**", p)
+                || M.match("/ai/**", p)
+                || "/".equals(p);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain)
+                                    FilterChain chain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        String token = resolveToken(request);
 
-        // 인증 없이 접근 가능한 경로는 필터 타지 않도록 바로 통과시킴
-        if (request.getMethod().equalsIgnoreCase("OPTIONS") || path.startsWith("/auth")) {
-            filterChain.doFilter(request, response);
+        // 토큰이 없으면 그냥 통과
+        if (!StringUtils.hasText(token)) {
+            chain.doFilter(request, response);
             return;
         }
 
-        // 토큰 인증 로직
-        String token = resolveToken(request);
-        if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
-            String username = jwtProvider.getUsernameFromToken(token);
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, null);
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            if (jwtProvider.validateToken(token)) {
+                String username = jwtProvider.getUsernameFromToken(token);
+                var auth = new UsernamePasswordAuthenticationToken(username, null, null);
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            // 토큰이 잘못된 경우는 401
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {

@@ -1,0 +1,33 @@
+# Git / VCS
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Gradle & build outputs
+.gradle
+build
+out
+**/build
+**/out
+**/target
+
+# Logs & test reports
+*.log
+**/test-classes
+**/test-output
+**/surefire-reports
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local

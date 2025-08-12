@@ -1,10 +1,11 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
+  forward-headers-strategy: native
 
 spring:
   data:
     mongodb:
-      uri: mongodb+srv://issuetalk:12345678@cluster0.ht1f3xk.mongodb.net/issuetalk?retryWrites=true&w=majority&appName=Cluster0
+      uri: ${MONGO_URI}
 
 logging:
   level:

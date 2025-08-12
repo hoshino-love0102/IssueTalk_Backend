@@ -8,10 +8,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class IssueTalkApplication {
 
     public static void main(String[] args) {
-        // .env 값 로딩 후 시스템 프로퍼티로 등록
         Dotenv dotenv = Dotenv.configure()
                 .ignoreIfMissing()
                 .load();
+
+        String mongoUri = dotenv.get("MONGO_URI");
+        if (mongoUri != null && !mongoUri.isBlank()) {
+            System.setProperty("MONGO_URI", mongoUri);
+        }
 
         System.setProperty("JWT_SECRET", dotenv.get("JWT_SECRET"));
         System.setProperty("OPENAI_API_KEY", dotenv.get("OPENAI_API_KEY"));

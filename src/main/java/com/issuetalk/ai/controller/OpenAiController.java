@@ -1,7 +1,11 @@
 package com.issuetalk.ai.controller;
 
+import com.issuetalk.ai.dto.request.TextRequest;
+import com.issuetalk.ai.dto.response.AnalyzeResponse;
+import com.issuetalk.ai.dto.response.SummaryResponse;
 import com.issuetalk.ai.service.OpenAiService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -9,24 +13,23 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OpenAiController {
 
-    // OpenAiService를 주입받아 사용
     private final OpenAiService openAiService;
 
-    // 토론 발언 요약 요청을 처리하는 엔드포인트
-    @PostMapping("/summary")
-    public String summarize(@RequestBody String message) {
-        return openAiService.summarizeStance(message);
+    @PostMapping(
+            value = "/summary",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public SummaryResponse summarize(@RequestBody TextRequest req) {
+        return openAiService.summarizeStance(req.getMessage());
     }
 
-    // 팩트체크 요청을 처리하는 엔드포인트
-    @PostMapping("/fact-check")
-    public String factCheck(@RequestBody String claim) {
-        return openAiService.factCheckClaim(claim);
-    }
-
-    // 감정 표현 완화 요청을 처리하는 엔드포인트
-    @PostMapping("/neutralize")
-    public String neutralize(@RequestBody String message) {
-        return openAiService.neutralizeExpression(message);
+    @PostMapping(
+            value = "/clean-check",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public AnalyzeResponse cleanAndCheck(@RequestBody TextRequest req) {
+        return openAiService.cleanAndFactCheck(req.getMessage());
     }
 }

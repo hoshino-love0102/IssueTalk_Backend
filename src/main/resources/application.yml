@@ -23,3 +23,7 @@ openai:
   model: gpt-3.5-turbo
   api:
     url: https://api.openai.com/v1/chat/completions
+
+# 검색 api 추가
+tavily:
+  api-key: ${TAVILY_API_KEY:}
